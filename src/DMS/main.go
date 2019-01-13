@@ -2,7 +2,6 @@ package main
 
 import (
 	d "DeviceManageServer"
-	//	"log"
 	"fmt"
 	"os"
 	"os/signal"
@@ -13,7 +12,7 @@ var h *d.StruHttpHandle = d.GetHttpInstance()
 var w *d.StruWebsocketHandle = d.GetWebsocketInstance()
 
 func dms_init() {
-	//数据库
+	d.InitLogger("./log/dms.log")
 	d.OpenDB("root:A123@456@tcp(127.0.0.1:3306)/test")
 	d.CoapServer_init()
 	b.Init()

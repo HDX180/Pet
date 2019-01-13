@@ -73,7 +73,7 @@ func wsHandle(w http.ResponseWriter, r *http.Request) {
 
 	clientCon := initClientConn(conn)
 	defer func() {
-		clientConn.isClose = true //不要在接收端关闭chan,这里置标志位
+		clientCon.isClose = true //不要在接收端关闭chan,这里置标志位
 	}()
 
 	vars := r.URL.Query()

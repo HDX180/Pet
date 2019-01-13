@@ -1,2 +1,8 @@
 *.[oa]
 src/github.com/
+
+*.[oa]
+go.uber.org/
+
+*.[oa]
+gopkg.in/

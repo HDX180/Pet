@@ -62,7 +62,7 @@ func getTimeHandler(w http.ResponseWriter, r *http.Request) {
 
 	tm := time.Now().Format(time.RFC1123)
 	w.Write([]byte("The time is: " + tm))
-	Logger.Info("The time is: " + tm)
+	//Logger.Info("The time is: " + tm)
 }
 
 func subHandler(w http.ResponseWriter, r *http.Request) {
