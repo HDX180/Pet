@@ -73,7 +73,7 @@ func wsHandle(w http.ResponseWriter, r *http.Request) {
 
 	clientCon := initClientConn(conn)
 	defer func() {
-		clientCon.isClose = true //不要在接收端关闭chan,这里置标志位
+		clientConn.isClose = true //不要在接收端关闭chan,这里置标志位
 	}()
 
 	vars := r.URL.Query()
@@ -100,6 +100,7 @@ func (w *StruWebsocketHandle) pushCoapMsg() {
 		clients, ok := w.subInfoMap[pushmsg.devCodeID]
 		if !ok {
 			log.Println("no client subscribe this dev:%d", pushmsg.devCodeID)
+			continue
 		}
 
 		for _, c := range clients {
@@ -109,10 +110,17 @@ func (w *StruWebsocketHandle) pushCoapMsg() {
 					if clientCon.isClose == true {
 						clientCon.con.Close()
 						delete(w.clientsMap, c.userID)
+						close(clientCon.msg)
 					} else {
 						clientCon.msg <- pushmsg
 					}
+				} else {
+					log.Println("client:%d disconnect from websockect", c.userID)
+					continue
 				}
+			} else {
+				log.Println("client:%d have not subscribe this topic:%d", c.userID, pushmsg.devCodeID)
+				continue
 			}
 		}
 	}
@@ -132,6 +140,7 @@ func (w *StruWebsocketHandle) addSubscribe(userID int, topics []topicType, codeI
 				c.topics.Add(t)
 			}
 			bIsFound = true
+			break
 		}
 	}
 	if !bIsFound {
