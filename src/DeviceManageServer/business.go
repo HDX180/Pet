@@ -10,8 +10,8 @@ import (
 
 const (
 	DEVNUM        = 10000 //初始化设备容量
-	UPDATETIME    = 3     //该时间(s)内设备缓存数据有效
-	KEEPALVIETIME = 3     //设备心跳间隔在该时间(s)内在线
+	UPDATETIME    = 10    //该时间(s)内设备缓存数据有效
+	KEEPALVIETIME = 10    //设备心跳间隔在该时间(s)内在线
 )
 
 type requestType int
@@ -100,6 +100,7 @@ func (b *StruBusiness) getTemperature(r *struGetDevTempReq, w *struGetDevTempRes
 			defer b.devDataReqPool.Put(req)
 			req.host = devinfo.host
 
+			log.Printf("req.host : %s", req.host)
 			//用对象池代替new
 			// req := &coap_struGetTempReq{
 			// 	host: devinfo.host,
@@ -112,17 +113,17 @@ func (b *StruBusiness) getTemperature(r *struGetDevTempReq, w *struGetDevTempRes
 				w.setCommonResp(DMS_ERR_DEV_COAPFAIL)
 				return errors.New("device coap fail")
 			}
-			w.Temperature = resp.temperature
+			w.Temperature = resp.Temperature
 
 			if devData != nil {
 				//更新缓存
 				devData.updateTime = time.Now()
-				devData.temperature = resp.temperature
+				devData.temperature = resp.Temperature
 			} else {
 				//加缓存
 				devData = &struDevData{
 					updateTime:  time.Now(),
-					temperature: resp.temperature,
+					temperature: resp.Temperature,
 				}
 			}
 			b.devDataList[devinfo.index] = devData
@@ -154,16 +155,19 @@ func (b *StruBusiness) UpdateDevData() {
 
 				if devData != nil {
 					//更新缓存
+
 					devData.updateTime = time.Now()
-					devData.temperature = resp.temperature
+					devData.temperature = resp.Temperature
+
 				} else {
 					//加缓存
 					devData = &struDevData{
 						updateTime:  time.Now(),
-						temperature: resp.temperature,
+						temperature: resp.Temperature,
 					}
 				}
 				b.devDataList[devinfo.index] = devData
+
 			}
 		}
 	}

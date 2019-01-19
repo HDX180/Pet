@@ -13,8 +13,8 @@ type coap_struGetTempReq struct {
 }
 
 type coap_struGetTempResp struct {
-	codeID      int
-	temperature int
+	CodeID      int `json:"CodeID"`
+	Temperature int `json:"Temperature"`
 }
 
 func coapclient_getTemperature(m_req *coap_struGetTempReq, m_resp *coap_struGetTempResp) error {
@@ -24,7 +24,7 @@ func coapclient_getTemperature(m_req *coap_struGetTempReq, m_resp *coap_struGetT
 		MessageID: 12345,
 	}
 
-	path := "/petdata"
+	path := "/pet/health"
 
 	req.SetPathString(path)
 
@@ -41,7 +41,7 @@ func coapclient_getTemperature(m_req *coap_struGetTempReq, m_resp *coap_struGetT
 	}
 
 	if rv != nil {
-		log.Printf("response rv: %v", rv)
+		//log.Printf("response rv: %v", rv)
 		log.Printf("Response payload: %s", rv.Payload)
 		json.Unmarshal(rv.Payload, m_resp)
 	}

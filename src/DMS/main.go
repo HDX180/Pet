@@ -13,7 +13,7 @@ var w *d.StruWebsocketHandle = d.GetWebsocketInstance()
 
 func dms_init() {
 	d.InitLogger("./log/dms.log")
-	d.OpenDB("root:A123@456@tcp(127.0.0.1:3306)/test")
+	d.OpenDB("root:123456@tcp(127.0.0.1:3306)/test")
 	d.CoapServer_init()
 	b.Init()
 

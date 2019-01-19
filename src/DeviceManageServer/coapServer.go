@@ -5,6 +5,8 @@ import (
 	"github.com/dustin/go-coap"
 	"log"
 	"net"
+	"strconv"
+	"strings"
 	"time"
 )
 
@@ -44,8 +46,10 @@ func handleRegister(l *net.UDPConn, a *net.UDPAddr, m *coap.Message) *coap.Messa
 }
 
 func handleKeepalive(l *net.UDPConn, a *net.UDPAddr, m *coap.Message) *coap.Message {
-	log.Printf("Got message in handleRegister: path=%q: %#v from %v", m.Path(), m, a)
-	codeID := m.Option(15).(int)
+	//log.Printf("Got message in handleKeepalive: path=%q: %#v from %v", m.Path(), m, a)
+	strCodeID := m.Option(15).(string)
+	strCodeID = string([]byte(strCodeID)[strings.IndexByte(strCodeID, '=')+1:])
+	codeID, _ := strconv.Atoi(strCodeID)
 	log.Printf("dev codeID = %d", codeID)
 	if devinfo := business.getDevInfo(codeID); devinfo != nil {
 		devinfo.keepaliveTime = time.Now()
@@ -57,7 +61,7 @@ func handleKeepalive(l *net.UDPConn, a *net.UDPAddr, m *coap.Message) *coap.Mess
 		Code:      coap.Content,
 		MessageID: m.MessageID,
 	}
-	log.Printf("Transmitting from A %#v", res)
+	//log.Printf("Transmitting from A %#v", res)
 	return res
 }
 

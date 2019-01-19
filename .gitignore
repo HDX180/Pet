@@ -6,3 +6,6 @@ go.uber.org/
 
 *.[oa]
 gopkg.in/
+
+*.[oa]
+m_test/
