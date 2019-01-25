@@ -195,5 +195,5 @@ func (w *StruWebsocketHandle) Start() {
 }
 
 func (w *StruWebsocketHandle) Close() {
-
+	return
 }
