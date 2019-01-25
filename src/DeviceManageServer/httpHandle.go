@@ -113,7 +113,10 @@ func unsubHandler(w http.ResponseWriter, r *http.Request) {
 
 func (h *StruHttpHandle) Start() {
 	go func() {
-		log.Fatal(http.ListenAndServe(":4637", h.mux))
+		err := http.ListenAndServe(":4637", h.mux)
+		if err != nil {
+			logger.Error(fmt.Sprintf("http ListenAndServe error : %s", err.Error()))
+		}
 	}()
 }
 

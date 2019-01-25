@@ -77,7 +77,10 @@ func CoapServer_init() {
 	routeRegistry(mux)
 
 	go func() {
-		log.Fatal(coap.ListenAndServe("udp", ":5683", mux))
+		err := coap.ListenAndServe("udp", ":5683", mux)
+		if err != nil {
+			logger.Error(fmt.Sprintf("coap ListenAndServe error : %s", err.Error()))
+		}
 	}()
 
 }

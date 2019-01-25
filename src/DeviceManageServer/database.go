@@ -22,13 +22,17 @@ func CloseDB() {
 
 //DEVINFO--->| ID | codeID |
 
-func db_getDevInfo(m *map[int]*struDevInfo) int {
+func db_getDevInfo(m *map[int]*struDevInfo) (int, error) {
 	var num int
 	// err := db.QueryRow("SELECT COUNT(*) FROM DEVINFO").Scan(&num)
 	// if err != nil {
 	// 	log.Fatal(err)
 	// }
 	rows, err := db.Query("SELECT * FROM DEVINFO")
+	if err != nil {
+		logger.Error(fmt.Sprintf("database query error : %s ", err.Error()), zap.String("sql", "SELECT * FROM DEVINFO"))
+		return num, err
+	}
 	for rows.Next() {
 		devinfo := new(struDevInfo)
 		err = rows.Scan(&devinfo.index, &devinfo.codeID)
@@ -39,7 +43,7 @@ func db_getDevInfo(m *map[int]*struDevInfo) int {
 		(*m)[devinfo.codeID] = devinfo
 		num++
 	}
-	return num
+	return num, nil
 }
 
 func db_getDevIndex(codeID int) int {

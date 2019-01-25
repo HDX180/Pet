@@ -16,7 +16,6 @@ func dms_init() {
 	d.OpenDB("root:123456@tcp(127.0.0.1:3306)/test")
 	d.CoapServer_init()
 	b.Init()
-
 	h.Init()
 	w.Init()
 }
