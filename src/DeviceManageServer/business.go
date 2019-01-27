@@ -174,7 +174,7 @@ func (b *StruBusiness) UpdateDevData() {
 }
 
 func (b *StruBusiness) Start() {
-	b.currDevNum = db_getDevInfo(&(b.devInfoMap))
+	b.currDevNum, _ = db_getDevInfo(&(b.devInfoMap))
 	go b.UpdateDevData()
 }
 
