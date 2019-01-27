@@ -122,5 +122,4 @@ func (h *StruHttpHandle) Start() {
 
 func (h *StruHttpHandle) Close() {
 	bIsClose = true
-	return
 }
