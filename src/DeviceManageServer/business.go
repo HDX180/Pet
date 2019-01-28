@@ -77,9 +77,11 @@ func (b *StruBusiness) getTemperature(r *struGetDevTempReq, w *struGetDevTempRes
 
 	if devinfo := b.getDevInfo(r.codeID); devinfo == nil {
 		w.setCommonResp(DMS_ERR_DEV_NOTEXIST)
+		return
 	} else {
 		if devinfo.status == false {
 			w.setCommonResp(DMS_ERR_DEV_OFFLINE)
+			return
 		}
 		if devData := b.devDataList[devinfo.index]; devData != nil && time.Since(devData.updateTime).Seconds() <= UPDATETIME {
 			//有缓存且数据具有时效性
