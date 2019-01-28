@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/dustin/go-coap"
-	"log"
 	"net"
 	"strconv"
 	"strings"
@@ -17,7 +16,7 @@ type coap_RegDevInfo struct {
 }
 
 func handleRegister(l *net.UDPConn, a *net.UDPAddr, m *coap.Message) *coap.Message {
-	log.Printf("Got message in handleRegister: path=%q: %#v from %v", m.Path(), m, a)
+	logger.Info(fmt.Sprintf("Got message in handleRegister: path=%q: %#v from %v", m.Path(), m, a))
 
 	var regDevinfo coap_RegDevInfo
 	json.Unmarshal(m.Payload, &regDevinfo)
@@ -41,17 +40,16 @@ func handleRegister(l *net.UDPConn, a *net.UDPAddr, m *coap.Message) *coap.Messa
 	}
 	//		res.SetOption(coap.ContentFormat, coap.TextPlain)
 
-	log.Printf("Transmitting from A %#v", res)
+	logger.Info(fmt.Sprintf("Transmitting from A %#v", res))
 	return res
 	//	}
 }
 
 func handleKeepalive(l *net.UDPConn, a *net.UDPAddr, m *coap.Message) *coap.Message {
-	//log.Printf("Got message in handleKeepalive: path=%q: %#v from %v", m.Path(), m, a)
 	strCodeID := m.Option(15).(string)
 	strCodeID = string([]byte(strCodeID)[strings.IndexByte(strCodeID, '=')+1:])
 	codeID, _ := strconv.Atoi(strCodeID)
-	log.Printf("dev codeID = %d", codeID)
+	logger.Info(fmt.Sprintf("dev codeID = %d keep alive", codeID))
 	if devinfo := business.getDevInfo(codeID); devinfo != nil {
 		devinfo.keepaliveTime = time.Now()
 		devinfo.status = true
@@ -62,7 +60,6 @@ func handleKeepalive(l *net.UDPConn, a *net.UDPAddr, m *coap.Message) *coap.Mess
 		Code:      coap.Content,
 		MessageID: m.MessageID,
 	}
-	//log.Printf("Transmitting from A %#v", res)
 	return res
 }
 

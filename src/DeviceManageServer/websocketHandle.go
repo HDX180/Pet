@@ -1,15 +1,12 @@
 package DeviceManageServer
 
 import (
-	"crypto/md5"
-	"fmt"
+	//"fmt"
 	"github.com/gorilla/websocket"
-	"io"
 	"log"
 	"net/http"
 	"set"
 	"strconv"
-	"time"
 )
 
 var websocketHandle *StruWebsocketHandle = &StruWebsocketHandle{}
@@ -55,13 +52,6 @@ func initClientConn(wsConn *websocket.Conn) *clientConn {
 		msg: make(chan struCoapPushMag, 1000),
 	}
 	return conn
-}
-
-func makeUserID() string {
-	curtime := time.Now().Unix()
-	h := md5.New()
-	io.WriteString(h, strconv.FormatInt(curtime, 10))
-	return fmt.Sprintf("%x", h.Sum(nil))
 }
 
 func wsHandle(w http.ResponseWriter, r *http.Request) {

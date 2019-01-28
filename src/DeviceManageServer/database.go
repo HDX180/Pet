@@ -51,7 +51,7 @@ func db_getDevIndex(codeID int) int {
 	index := 0
 	err := db.QueryRow("SELECT ID FROM DEVINFO WHERE CODEID = ?", codeID).Scan(&index)
 	if err != nil {
-		//	Logger.Debug(err.Error())
+		logger.Error(fmt.Sprintf("QueryRow error : %s", err.Error()))
 	}
 	return index
 }

@@ -1,12 +1,13 @@
 package DeviceManageServer
 
 import (
-	//	"fmt"
 	"encoding/json"
+	"fmt"
 	"github.com/dustin/go-coap"
-
-	"log"
+	"math/rand"
 )
+
+const MAX_MASSAGEID = 1 << 16 //2^16
 
 type coap_struGetTempReq struct {
 	host string
@@ -17,11 +18,15 @@ type coap_struGetTempResp struct {
 	Temperature int `json:"Temperature"`
 }
 
+func makeMessageID() uint16 {
+	return uint16(rand.Int31() % MAX_MASSAGEID)
+}
+
 func coapclient_getTemperature(m_req *coap_struGetTempReq, m_resp *coap_struGetTempResp) error {
 	req := coap.Message{
 		Type:      coap.Confirmable,
 		Code:      coap.GET,
-		MessageID: 12345,
+		MessageID: makeMessageID(),
 	}
 
 	path := "/pet/health"
@@ -30,19 +35,18 @@ func coapclient_getTemperature(m_req *coap_struGetTempReq, m_resp *coap_struGetT
 
 	c, err := coap.Dial("udp", m_req.host)
 	if err != nil {
-		log.Printf("Error dialing: %v", err)
+		logger.Error(fmt.Sprintf("Error dialing: %s", err.Error()))
 		return err
 	}
 
 	rv, err := c.Send(req)
 	if err != nil {
-		log.Printf("Error sending request: %v", err)
+		logger.Error(fmt.Sprintf("Error sending request: %s", err.Error()))
 		return err
 	}
 
 	if rv != nil {
-		//log.Printf("response rv: %v", rv)
-		log.Printf("Response payload: %s", rv.Payload)
+		logger.Info(fmt.Sprintf("Response payload: %s", rv.Payload))
 		json.Unmarshal(rv.Payload, m_resp)
 	}
 

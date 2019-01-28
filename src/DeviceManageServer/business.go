@@ -1,11 +1,9 @@
 package DeviceManageServer
 
 import (
-	"log"
-	"time"
-	//	"runtime"
-	"errors"
+	"fmt"
 	"sync"
+	"time"
 )
 
 const (
@@ -35,11 +33,10 @@ type struDevData struct {
 }
 
 type StruBusiness struct {
-	devInfoMap      map[int]*struDevInfo //<codeID,*struDevInfo>
-	devDataList     [DEVNUM]*struDevData //[index] *struDevData
-	currDevNum      int                  //指通过app绑定的数量
-	devDataReqPool  sync.Pool            //定时更新请求的对象池
-	devDataRespPool sync.Pool            //定时更新回复的对象池
+	devInfoMap  map[int]*struDevInfo //<codeID,*struDevInfo>
+	devDataList [DEVNUM]*struDevData //[index] *struDevData
+	currDevNum  int                  //指通过app绑定的数量
+
 }
 
 var business *StruBusiness = &StruBusiness{}
@@ -52,12 +49,7 @@ func (b *StruBusiness) Init() {
 
 	b.devInfoMap = make(map[int]*struDevInfo)
 	//	b.devDataList = make([]*struDevData, 0, DEVNUM)
-	b.devDataReqPool = sync.Pool{
-		New: func() interface{} { return new(coap_struGetTempReq) },
-	}
-	b.devDataRespPool = sync.Pool{
-		New: func() interface{} { return new(coap_struGetTempResp) },
-	}
+
 }
 
 func (b *StruBusiness) getDevInfo(codeID int) *struDevInfo {
@@ -65,7 +57,7 @@ func (b *StruBusiness) getDevInfo(codeID int) *struDevInfo {
 	if !ok {
 		//Start时未加载后续绑定的设备
 		if index := db_getDevIndex(codeID); index == 0 {
-			log.Printf("codeID : %d is not exsit", codeID)
+			logger.Error(fmt.Sprintf("codeID : %d is not exsit", codeID))
 			return nil
 		} else {
 			devinfo = &struDevInfo{
@@ -79,39 +71,28 @@ func (b *StruBusiness) getDevInfo(codeID int) *struDevInfo {
 	return devinfo
 }
 
-func (b *StruBusiness) getTemperature(r *struGetDevTempReq, w *struGetDevTempResp) error {
+func (b *StruBusiness) getTemperature(r *struGetDevTempReq, w *struGetDevTempResp) {
 
 	w.CodeID = r.codeID
 
 	if devinfo := b.getDevInfo(r.codeID); devinfo == nil {
 		w.setCommonResp(DMS_ERR_DEV_NOTEXIST)
-		return errors.New("device is not exsit")
 	} else {
 		if devinfo.status == false {
 			w.setCommonResp(DMS_ERR_DEV_OFFLINE)
-			return errors.New("device is offline")
 		}
 		if devData := b.devDataList[devinfo.index]; devData != nil && time.Since(devData.updateTime).Seconds() <= UPDATETIME {
 			//有缓存且数据具有时效性
 			w.Temperature = devData.temperature
 		} else {
 			//无命中缓存或数据源无时效性,CoAP client->
-			req := b.devDataReqPool.Get().(*coap_struGetTempReq)
-			defer b.devDataReqPool.Put(req)
-			req.host = devinfo.host
-
-			log.Printf("req.host : %s", req.host)
-			//用对象池代替new
-			// req := &coap_struGetTempReq{
-			// 	host: devinfo.host,
-			// }
-
-			resp := b.devDataRespPool.Get().(*coap_struGetTempResp)
-			defer b.devDataRespPool.Put(resp)
-			//resp := new(coap_struGetTempResp)
+			logger.Info(fmt.Sprintf("codeID : %d data is out of date", r.codeID))
+			req := &coap_struGetTempReq{
+				host: devinfo.host,
+			}
+			resp := new(coap_struGetTempResp)
 			if err := coapclient_getTemperature(req, resp); err != nil {
 				w.setCommonResp(DMS_ERR_DEV_COAPFAIL)
-				return errors.New("device coap fail")
 			}
 			w.Temperature = resp.Temperature
 
@@ -130,10 +111,15 @@ func (b *StruBusiness) getTemperature(r *struGetDevTempReq, w *struGetDevTempRes
 		}
 	}
 	w.setCommonResp(DMS_ERR_SUCCESS)
-	return nil
 }
 
 func (b *StruBusiness) UpdateDevData() {
+	devDataReqPool := sync.Pool{
+		New: func() interface{} { return new(coap_struGetTempReq) },
+	}
+	devDataRespPool := sync.Pool{
+		New: func() interface{} { return new(coap_struGetTempResp) },
+	}
 	for {
 		for _, devinfo := range b.devInfoMap {
 			if bIsClose == true {
@@ -145,10 +131,13 @@ func (b *StruBusiness) UpdateDevData() {
 			}
 
 			if devData := b.devDataList[devinfo.index]; devData == nil || time.Since(devData.updateTime).Seconds() > UPDATETIME {
-				req := &coap_struGetTempReq{
-					host: devinfo.host,
-				}
-				resp := new(coap_struGetTempResp)
+				req := devDataReqPool.Get().(*coap_struGetTempReq)
+				defer devDataReqPool.Put(req)
+				req.host = devinfo.host
+
+				resp := devDataRespPool.Get().(*coap_struGetTempResp)
+				defer devDataRespPool.Put(resp)
+
 				if err := coapclient_getTemperature(req, resp); err != nil {
 					continue
 				}

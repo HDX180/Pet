@@ -17,19 +17,19 @@ func dms_init() {
 	d.CoapServer_init()
 	b.Init()
 	h.Init()
-	w.Init()
+	//	w.Init()
 }
 
 func dms_start() {
 	b.Start()
 	h.Start()
-	w.Start()
+	//	w.Start()
 }
 
 func dms_close() {
 	b.Close()
 	h.Close()
-	w.Close()
+	//	w.Close()
 }
 
 func main() {
