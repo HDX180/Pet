@@ -146,7 +146,6 @@ func (b *StruBusiness) UpdateDevData() {
 
 				if devData != nil {
 					//更新缓存
-
 					devData.updateTime = time.Now()
 					devData.temperature = resp.Temperature
 
@@ -158,9 +157,9 @@ func (b *StruBusiness) UpdateDevData() {
 					}
 				}
 				b.devDataList[devinfo.index] = devData
-
 			}
 		}
+		time.Sleep(time.Duration(1) * time.Second)
 	}
 }
 
