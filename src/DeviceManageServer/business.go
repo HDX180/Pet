@@ -169,5 +169,5 @@ func (b *StruBusiness) Start() {
 }
 
 func (b *StruBusiness) Close() {
-
+	return
 }
