@@ -27,6 +27,7 @@ func handleRegister(l *net.UDPConn, a *net.UDPAddr, m *coap.Message) *coap.Messa
 		devinfo.version = regDevinfo.Version
 		devinfo.host = a.String()
 	} else {
+		logger.Info(fmt.Sprintf("dev codeID = %d is not exist", regDevinfo.CodeID))
 		return nil //数据库不存在时不回复确认
 	}
 
