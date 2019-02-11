@@ -70,7 +70,7 @@ func routeRegistry(mux *coap.ServeMux) {
 
 }
 
-func CoapServer_init() {
+func InitCoapServer() {
 	mux := coap.NewServeMux()
 
 	routeRegistry(mux)

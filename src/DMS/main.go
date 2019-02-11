@@ -10,11 +10,15 @@ import (
 var b *d.StruBusiness = d.GetBusinessInstance()
 var h *d.StruHttpHandle = d.GetHttpInstance()
 var w *d.StruWebsocketHandle = d.GetWebsocketInstance()
+var c *d.StruConfig = d.GetConfigInstance()
 
 func dms_init() {
 	d.InitLogger("./log/dms.log")
-	d.OpenDB("root:A123@456@tcp(127.0.0.1:3306)/test")
-	d.CoapServer_init()
+
+	c.Init("config.yaml")
+
+	d.OpenDB(c.GetMySqlUri())
+	d.InitCoapServer()
 	b.Init()
 	h.Init()
 	//	w.Init()
