@@ -12,6 +12,9 @@ const (
 	KEEPALVIETIME = 10    //设备心跳间隔在该时间(s)内在线
 )
 
+var totalReqNum int = 0
+var intoCache int = 0
+
 type requestType int
 
 const (
@@ -83,9 +86,11 @@ func (b *StruBusiness) getTemperature(r *struGetDevTempReq, w *struGetDevTempRes
 			w.setCommonResp(DMS_ERR_DEV_OFFLINE)
 			return
 		}
+		totalReqNum++
 		if devData := b.devDataList[devinfo.index]; devData != nil && time.Since(devData.updateTime).Seconds() <= UPDATETIME {
 			//有缓存且数据具有时效性
 			w.Temperature = devData.temperature
+			intoCache++
 		} else {
 			//无命中缓存或数据源无时效性,CoAP client->
 			logger.Info(fmt.Sprintf("codeID : %d data is out of date", r.codeID))
@@ -95,6 +100,7 @@ func (b *StruBusiness) getTemperature(r *struGetDevTempReq, w *struGetDevTempRes
 			resp := new(coap_struGetTempResp)
 			if err := coapclient_getTemperature(req, resp); err != nil {
 				w.setCommonResp(DMS_ERR_DEV_COAPFAIL)
+				return
 			}
 			w.Temperature = resp.Temperature
 

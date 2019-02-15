@@ -89,7 +89,7 @@ func (w *StruWebsocketHandle) pushCoapMsg() {
 		pushmsg, ok := <-w.msg
 		clients, ok := w.subInfoMap[pushmsg.devCodeID]
 		if !ok {
-			log.Println("no client subscribe this dev:%d", pushmsg.devCodeID)
+			log.Println("no client subscribe this dev:", pushmsg.devCodeID)
 			continue
 		}
 
@@ -105,11 +105,11 @@ func (w *StruWebsocketHandle) pushCoapMsg() {
 						clientCon.msg <- pushmsg
 					}
 				} else {
-					log.Println("client:%d disconnect from websockect", c.userID)
+					log.Printf("client:%d disconnect from websockect", c.userID)
 					continue
 				}
 			} else {
-				log.Println("client:%d have not subscribe this topic:%d", c.userID, pushmsg.devCodeID)
+				log.Printf("client:%d have not subscribe this topic:%d", c.userID, pushmsg.devCodeID)
 				continue
 			}
 		}

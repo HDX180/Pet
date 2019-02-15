@@ -44,3 +44,9 @@ type struSubscribeReq struct {
 	CodeID int         `json:"CodeID"`
 	Topics []topicType `json:"Topics"`
 }
+
+type struCacheTestReq struct {
+	Cache int `json:"cache"`
+	Total int `json:"total"`
+	Rate  int `json:"rate"`
+}

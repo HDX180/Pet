@@ -25,6 +25,7 @@ func (h *StruHttpHandle) Init() {
 	h.mux = mux
 	mux.HandleFunc("/getDevTemp", getDevTempHandler)
 	mux.HandleFunc("/time", getTimeHandler)
+	mux.HandleFunc("/cacheTest", cacheTestHandler)
 	mux.HandleFunc("/subscribe", subHandler)
 	mux.HandleFunc("/unSubscribe", unsubHandler)
 }
@@ -39,6 +40,17 @@ func checkAccessToken() bool {
 	// buf:=bytes.NewBuffer(make([]byte,0,512))
 	// length,_ := buf.ReadForm(resp.Body)
 	return true
+}
+
+func cacheTestHandler(w http.ResponseWriter, r *http.Request) {
+	cacheResp := &struCacheTestReq{
+		Cache: intoCache,
+		Total: totalReqNum,
+		Rate:  intoCache / totalReqNum * 100,
+	}
+	if data, err := json.Marshal(*cacheResp); err == nil {
+		w.Write(data)
+	}
 }
 
 func getDevTempHandler(w http.ResponseWriter, r *http.Request) {
@@ -61,7 +73,6 @@ func getTimeHandler(w http.ResponseWriter, r *http.Request) {
 
 	tm := time.Now().Format(time.RFC1123)
 	w.Write([]byte("The time is: " + tm))
-	//Logger.Info("The time is: " + tm)
 }
 
 func subHandler(w http.ResponseWriter, r *http.Request) {
