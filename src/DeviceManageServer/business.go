@@ -7,9 +7,8 @@ import (
 )
 
 const (
-	DEVNUM        = 10000 //初始化设备容量
-	UPDATETIME    = 10    //该时间(s)内设备缓存数据有效
-	KEEPALVIETIME = 10    //设备心跳间隔在该时间(s)内在线
+	UPDATETIME    = 10 //该时间(s)内设备缓存数据有效
+	KEEPALVIETIME = 10 //设备心跳间隔在该时间(s)内在线
 )
 
 var totalReqNum int = 0
@@ -36,9 +35,9 @@ type struDevData struct {
 }
 
 type StruBusiness struct {
-	devInfoMap  map[int]*struDevInfo //<codeID,*struDevInfo>
-	devDataList [DEVNUM]*struDevData //[index] *struDevData
-	currDevNum  int                  //指通过app绑定的数量
+	devInfoMap map[int]*struDevInfo //<codeID,*struDevInfo>
+	devDataMap map[int]*struDevData //<index, *struDevData>
+	currDevNum int                  //指通过app绑定的数量
 
 }
 
@@ -51,7 +50,6 @@ func GetBusinessInstance() *StruBusiness {
 func (b *StruBusiness) Init() {
 
 	b.devInfoMap = make(map[int]*struDevInfo)
-	//	b.devDataList = make([]*struDevData, 0, DEVNUM)
 
 }
 
@@ -87,7 +85,7 @@ func (b *StruBusiness) getTemperature(r *struGetDevTempReq, w *struGetDevTempRes
 			return
 		}
 		totalReqNum++
-		if devData := b.devDataList[devinfo.index]; devData != nil && time.Since(devData.updateTime).Seconds() <= UPDATETIME {
+		if devData := b.devDataMap[devinfo.index]; devData != nil && time.Since(devData.updateTime).Seconds() <= UPDATETIME {
 			//有缓存且数据具有时效性
 			w.Temperature = devData.temperature
 			intoCache++
@@ -100,6 +98,7 @@ func (b *StruBusiness) getTemperature(r *struGetDevTempReq, w *struGetDevTempRes
 			resp := new(coap_struGetTempResp)
 			if err := coapclient_getTemperature(req, resp); err != nil {
 				w.setCommonResp(DMS_ERR_DEV_COAPFAIL)
+				totalReqNum--
 				return
 			}
 			w.Temperature = resp.Temperature
@@ -115,7 +114,7 @@ func (b *StruBusiness) getTemperature(r *struGetDevTempReq, w *struGetDevTempRes
 					temperature: resp.Temperature,
 				}
 			}
-			b.devDataList[devinfo.index] = devData
+			b.devDataMap[devinfo.index] = devData
 		}
 	}
 	w.setCommonResp(DMS_ERR_SUCCESS)
@@ -138,7 +137,7 @@ func (b *StruBusiness) UpdateDevData() {
 				continue //如果设备不在线，不更新设备数据
 			}
 
-			if devData := b.devDataList[devinfo.index]; devData == nil || time.Since(devData.updateTime).Seconds() > UPDATETIME {
+			if devData := b.devDataMap[devinfo.index]; devData == nil || time.Since(devData.updateTime).Seconds() > UPDATETIME {
 				req := devDataReqPool.Get().(*coap_struGetTempReq)
 				defer devDataReqPool.Put(req)
 				req.host = devinfo.host
@@ -162,7 +161,7 @@ func (b *StruBusiness) UpdateDevData() {
 						temperature: resp.Temperature,
 					}
 				}
-				b.devDataList[devinfo.index] = devData
+				b.devDataMap[devinfo.index] = devData
 			}
 		}
 		time.Sleep(time.Duration(1) * time.Second)

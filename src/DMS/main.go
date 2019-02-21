@@ -15,7 +15,7 @@ var c *d.StruConfig = d.GetConfigInstance()
 func dms_init() {
 	d.InitLogger("./log/dms.log")
 
-	c.Init("config.yaml")
+	c.Init("config.yml")
 
 	d.OpenDB(c.GetMySqlUri())
 	d.InitCoapServer()
