@@ -16,7 +16,7 @@ type coap_RegDevInfo struct {
 }
 
 func handleRegister(l *net.UDPConn, a *net.UDPAddr, m *coap.Message) *coap.Message {
-	logger.Info(fmt.Sprintf("Got message in handleRegister: path=%q: %#v from %v", m.Path(), m, a))
+	//logger.Info(fmt.Sprintf("Got message in handleRegister: path=%q: %#v from %v", m.Path(), m, a))
 
 	var regDevinfo coap_RegDevInfo
 	json.Unmarshal(m.Payload, &regDevinfo)
@@ -27,7 +27,7 @@ func handleRegister(l *net.UDPConn, a *net.UDPAddr, m *coap.Message) *coap.Messa
 		devinfo.version = regDevinfo.Version
 		devinfo.host = a.String()
 	} else {
-		logger.Info(fmt.Sprintf("dev codeID = %d is not exist", regDevinfo.CodeID))
+		//	logger.Info(fmt.Sprintf("dev codeID = %d is not exist", regDevinfo.CodeID))
 		return nil //数据库不存在时不回复确认
 	}
 
@@ -41,7 +41,7 @@ func handleRegister(l *net.UDPConn, a *net.UDPAddr, m *coap.Message) *coap.Messa
 	}
 	//		res.SetOption(coap.ContentFormat, coap.TextPlain)
 
-	logger.Info(fmt.Sprintf("Transmitting from A %#v", res))
+	//logger.Info(fmt.Sprintf("Transmitting from A %#v", res))
 	return res
 	//	}
 }

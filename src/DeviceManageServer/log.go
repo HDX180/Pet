@@ -4,10 +4,20 @@ import (
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
 	"gopkg.in/natefinch/lumberjack.v2"
-	"os"
+	//"os"
 )
 
 var logger *zap.Logger
+
+var levelMap = map[string]zap.Level{
+	"debug":  zap.DebugLevel,
+	"info":   zap.InfoLevel,
+	"warn":   zap.WarnLevel,
+	"error":  zap.ErrorLevel,
+	"dpanic": zap.DPanicLevel,
+	"panic":  zap.PanicLevel,
+	"fatal":  zap.FatalLevel,
+}
 
 // logpath 日志文件路径
 func InitLogger(logpath string) {
@@ -40,7 +50,8 @@ func InitLogger(logpath string) {
 
 	core := zapcore.NewCore(
 		zapcore.NewJSONEncoder(encoderConfig),
-		zapcore.NewMultiWriteSyncer(zapcore.AddSync(os.Stdout), zapcore.AddSync(&hook)), // 打印到控制台和文件
+		//zapcore.NewMultiWriteSyncer(zapcore.AddSync(os.Stdout), zapcore.AddSync(&hook)), // 打印到控制台和文件
+		zapcore.AddSync(&hook),
 		atomicLevel,
 	)
 
@@ -53,5 +64,4 @@ func InitLogger(logpath string) {
 
 	logger = zap.New(core, caller, development, filed)
 	logger.Info("Default Logger init success")
-
 }
