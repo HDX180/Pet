@@ -9,16 +9,6 @@ import (
 
 var logger *zap.Logger
 
-var levelMap = map[string]zap.Level{
-	"debug":  zap.DebugLevel,
-	"info":   zap.InfoLevel,
-	"warn":   zap.WarnLevel,
-	"error":  zap.ErrorLevel,
-	"dpanic": zap.DPanicLevel,
-	"panic":  zap.PanicLevel,
-	"fatal":  zap.FatalLevel,
-}
-
 // logpath 日志文件路径
 func InitLogger(logpath string) {
 

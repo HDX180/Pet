@@ -7,8 +7,8 @@ import (
 )
 
 const (
-	UPDATETIME    = 10 //该时间(s)内设备缓存数据有效
-	KEEPALVIETIME = 10 //设备心跳间隔在该时间(s)内在线
+	UPDATETIME    = 3 //该时间(s)内设备缓存数据有效
+	KEEPALVIETIME = 3 //设备心跳间隔在该时间(s)内在线
 )
 
 var totalReqNum int = 0
@@ -48,9 +48,8 @@ func GetBusinessInstance() *StruBusiness {
 }
 
 func (b *StruBusiness) Init() {
-
 	b.devInfoMap = make(map[int]*struDevInfo)
-
+	b.devDataMap = make(map[int]*struDevData)
 }
 
 func (b *StruBusiness) getDevInfo(codeID int) *struDevInfo {
