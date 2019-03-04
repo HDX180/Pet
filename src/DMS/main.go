@@ -3,6 +3,8 @@ package main
 import (
 	d "DeviceManageServer"
 	"fmt"
+	"net/http"
+	_ "net/http/pprof"
 	"os"
 	"os/signal"
 )
@@ -40,6 +42,10 @@ func main() {
 
 	dms_init()
 	dms_start()
+
+	go func() {
+		fmt.Println(http.ListenAndServe("localhost:10000", nil))
+	}()
 
 	c := make(chan os.Signal, 1)
 	signal.Notify(c, os.Interrupt, os.Kill)

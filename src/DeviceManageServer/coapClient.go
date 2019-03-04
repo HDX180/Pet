@@ -46,7 +46,7 @@ func coapclient_getTemperature(m_req *coap_struGetTempReq, m_resp *coap_struGetT
 	}
 
 	if rv != nil {
-		logger.Info(fmt.Sprintf("Response payload: %s", rv.Payload))
+		//	logger.Info(fmt.Sprintf("Response payload: %s", rv.Payload))
 		json.Unmarshal(rv.Payload, m_resp)
 	}
 

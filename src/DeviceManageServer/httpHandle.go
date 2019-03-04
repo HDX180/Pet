@@ -46,7 +46,7 @@ func cacheTestHandler(w http.ResponseWriter, r *http.Request) {
 	cacheResp := &struCacheTestReq{
 		Cache: intoCache,
 		Total: totalReqNum,
-		Rate:  intoCache / totalReqNum * 100,
+		Rate:  intoCache * 100 / totalReqNum,
 	}
 	if data, err := json.Marshal(*cacheResp); err == nil {
 		w.Write(data)

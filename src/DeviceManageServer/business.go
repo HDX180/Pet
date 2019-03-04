@@ -138,13 +138,12 @@ func (b *StruBusiness) UpdateDevData() {
 
 			if devData := b.devDataMap[devinfo.index]; devData == nil || time.Since(devData.updateTime).Seconds() > UPDATETIME {
 				req := devDataReqPool.Get().(*coap_struGetTempReq)
-				defer devDataReqPool.Put(req)
 				req.host = devinfo.host
-
 				resp := devDataRespPool.Get().(*coap_struGetTempResp)
-				defer devDataRespPool.Put(resp)
 
 				if err := coapclient_getTemperature(req, resp); err != nil {
+					devDataRespPool.Put(resp)
+					devDataReqPool.Put(req)
 					continue
 				}
 
@@ -161,6 +160,8 @@ func (b *StruBusiness) UpdateDevData() {
 					}
 				}
 				b.devDataMap[devinfo.index] = devData
+				devDataRespPool.Put(resp)
+				devDataReqPool.Put(req)
 			}
 		}
 		time.Sleep(time.Duration(1) * time.Second)
