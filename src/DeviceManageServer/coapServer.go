@@ -50,7 +50,7 @@ func handleKeepalive(l *net.UDPConn, a *net.UDPAddr, m *coap.Message) *coap.Mess
 	strCodeID := m.Option(15).(string)
 	strCodeID = string([]byte(strCodeID)[strings.IndexByte(strCodeID, '=')+1:])
 	codeID, _ := strconv.Atoi(strCodeID)
-	logger.Info(fmt.Sprintf("dev codeID = %d keep alive", codeID))
+	//	logger.Info(fmt.Sprintf("dev codeID = %d keep alive", codeID))
 	if devinfo := business.getDevInfo(codeID); devinfo != nil {
 		devinfo.keepaliveTime = time.Now()
 		devinfo.status = true
@@ -70,7 +70,7 @@ func routeRegistry(mux *coap.ServeMux) {
 
 }
 
-func InitCoapServer() {
+func StartCoapServer() {
 	mux := coap.NewServeMux()
 
 	routeRegistry(mux)

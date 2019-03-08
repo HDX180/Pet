@@ -23,7 +23,7 @@ func CloseDB() {
 
 //DEVINFO--->| ID | codeID |
 
-func db_getDevInfo(l *[WORKNUM]mapDevInfo) (int, error) {
+func db_getDevInfo() (int, error) {
 	var num int
 	// err := db.QueryRow("SELECT COUNT(*) FROM DEVINFO").Scan(&num)
 	// if err != nil {
@@ -41,11 +41,9 @@ func db_getDevInfo(l *[WORKNUM]mapDevInfo) (int, error) {
 			logger.Error(fmt.Sprintf("rows Scan error : %s", err.Error()))
 		}
 		devinfo.status = false //初始化为不在线的状态
-		codeID := devinfo.codeID
-		l[codeID%10][codeID] = devinfo
+		business.setDevInfoMap(devinfo.codeID, devinfo)
 		num++
 	}
-	fmt.Println(*l)
 	return num, nil
 }
 

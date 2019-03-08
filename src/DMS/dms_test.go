@@ -1,4 +1,4 @@
-package dmstest
+package main
 
 import (
 	"encoding/json"
@@ -15,7 +15,7 @@ type struCacheTestReq struct {
 }
 
 func Test_Cache(t *testing.T) {
-	resp, err := http.Get("http://127.0.0.1/dev/cacheTest")
+	resp, err := http.Get("http://127.0.0.1/cacheTest")
 	if err != nil {
 		t.Error("http Get error")
 	}

@@ -1,4 +1,4 @@
-package dmstest
+package main
 
 import (
 	"fmt"
@@ -13,15 +13,18 @@ func BenchmarkHealth(b *testing.B) {
 
 	for i := 0; i < b.N; i++ {
 		codeID := 12370 + i
-		uri := "http://112.74.51.51:4637/getDevTemp?codeID=" + strconv.Itoa(codeID)
+		uri := "http://127.0.0.1:4637/getDevTemp?codeID=" + strconv.Itoa(codeID)
 		resp, err := http.Get(uri)
-		defer resp.Body.Close()
+
 		body, err := ioutil.ReadAll(resp.Body)
 		if err != nil {
 			// handle error
+			continue
+			resp.Body.Close()
 		}
 
 		fmt.Println(string(body))
+		resp.Body.Close()
 	}
 
 }

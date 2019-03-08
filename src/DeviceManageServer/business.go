@@ -38,10 +38,11 @@ type struDevData struct {
 type mapDevInfo map[int]*struDevInfo //<codeID,*struDevInfo>
 
 type StruBusiness struct {
-	devInfoMaps [WORKNUM]mapDevInfo
-	devDataMap  map[int]*struDevData //<index, *struDevData>
-	currDevNum  int                  //指通过app绑定的数量
-
+	devInfoMaps    [WORKNUM]mapDevInfo
+	devMapLocks    [WORKNUM]sync.RWMutex
+	devDataMap     map[int]*struDevData //<index, *struDevData>
+	devDataMapLock sync.RWMutex
+	currDevNum     int //指通过app绑定的数量
 }
 
 var business *StruBusiness = &StruBusiness{}
@@ -57,8 +58,36 @@ func (b *StruBusiness) Init() {
 	b.devDataMap = make(map[int]*struDevData)
 }
 
+func (b *StruBusiness) getDevDataMap(index int) (*struDevData, bool) {
+	b.devDataMapLock.RLock()
+	defer b.devDataMapLock.RUnlock()
+	val, ok := b.devDataMap[index]
+	return val, ok
+}
+
+func (b *StruBusiness) setDevDataMap(index int, v *struDevData) {
+	b.devDataMapLock.Lock()
+	defer b.devDataMapLock.Unlock()
+	b.devDataMap[index] = v
+}
+
+func (b *StruBusiness) getDevInfoMap(codeID int) (*struDevInfo, bool) {
+	var index int = codeID & (WORKNUM - 1)
+	b.devMapLocks[index].RLock()
+	defer b.devMapLocks[index].RUnlock()
+	val, ok := b.devInfoMaps[index][codeID]
+	return val, ok
+}
+
+func (b *StruBusiness) setDevInfoMap(codeID int, d *struDevInfo) {
+	var index int = codeID & (WORKNUM - 1)
+	b.devMapLocks[index].Lock()
+	defer b.devMapLocks[index].Unlock()
+	b.devInfoMaps[index][codeID] = d
+}
+
 func (b *StruBusiness) getDevInfo(codeID int) *struDevInfo {
-	devinfo, ok := b.devInfoMaps[codeID%10][codeID]
+	devinfo, ok := b.getDevInfoMap(codeID)
 	if !ok {
 		//Start时未加载后续绑定的设备
 		if index := db_getDevIndex(codeID); index == 0 {
@@ -69,7 +98,8 @@ func (b *StruBusiness) getDevInfo(codeID int) *struDevInfo {
 				codeID: codeID,
 				index:  index,
 			}
-			b.devInfoMaps[codeID%10][codeID] = devinfo
+			devinfo.status = false
+			b.setDevInfoMap(codeID, devinfo)
 			b.currDevNum++
 		}
 	}
@@ -89,7 +119,7 @@ func (b *StruBusiness) getTemperature(r *struGetDevTempReq, w *struGetDevTempRes
 			return
 		}
 		totalReqNum++
-		if devData := b.devDataMap[devinfo.index]; devData != nil && time.Since(devData.updateTime).Seconds() <= UPDATETIME {
+		if devData, ok := b.getDevDataMap(devinfo.index); ok && time.Since(devData.updateTime).Seconds() <= UPDATETIME {
 			//有缓存且数据具有时效性
 			w.Temperature = devData.temperature
 			intoCache++
@@ -107,7 +137,7 @@ func (b *StruBusiness) getTemperature(r *struGetDevTempReq, w *struGetDevTempRes
 			}
 			w.Temperature = resp.Temperature
 
-			if devData != nil {
+			if ok {
 				//更新缓存
 				devData.updateTime = time.Now()
 				devData.temperature = resp.Temperature
@@ -118,7 +148,7 @@ func (b *StruBusiness) getTemperature(r *struGetDevTempReq, w *struGetDevTempRes
 					temperature: resp.Temperature,
 				}
 			}
-			b.devDataMap[devinfo.index] = devData
+			b.setDevDataMap(devinfo.index, devData)
 		}
 	}
 	w.setCommonResp(DMS_ERR_SUCCESS)
@@ -141,7 +171,7 @@ func (b *StruBusiness) UpdateDevData(i int) {
 				continue //如果设备不在线，不更新设备数据
 			}
 
-			if devData := b.devDataMap[devinfo.index]; devData == nil || time.Since(devData.updateTime).Seconds() > UPDATETIME {
+			if devData, ok := b.getDevDataMap(devinfo.index); ok || time.Since(devData.updateTime).Seconds() > UPDATETIME {
 				req := devDataReqPool.Get().(*coap_struGetTempReq)
 				req.host = devinfo.host
 				resp := devDataRespPool.Get().(*coap_struGetTempResp)
@@ -152,7 +182,7 @@ func (b *StruBusiness) UpdateDevData(i int) {
 					continue
 				}
 
-				if devData != nil {
+				if ok {
 					//更新缓存
 					devData.updateTime = time.Now()
 					devData.temperature = resp.Temperature
@@ -164,7 +194,7 @@ func (b *StruBusiness) UpdateDevData(i int) {
 						temperature: resp.Temperature,
 					}
 				}
-				b.devDataMap[devinfo.index] = devData
+				b.setDevDataMap(devinfo.index, devData)
 				devDataRespPool.Put(resp)
 				devDataReqPool.Put(req)
 			}
@@ -174,11 +204,10 @@ func (b *StruBusiness) UpdateDevData(i int) {
 }
 
 func (b *StruBusiness) Start() {
-	b.currDevNum, _ = db_getDevInfo(&b.devInfoMaps)
-	for i := 0; i < 10; i++ {
+	b.currDevNum, _ = db_getDevInfo()
+	for i := 0; i < WORKNUM; i++ {
 		go b.UpdateDevData(i)
 	}
-
 }
 
 func (b *StruBusiness) Close() {
