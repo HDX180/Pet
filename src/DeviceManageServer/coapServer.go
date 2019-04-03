@@ -51,10 +51,10 @@ func handleKeepalive(l *net.UDPConn, a *net.UDPAddr, m *coap.Message) *coap.Mess
 	strCodeID = string([]byte(strCodeID)[strings.IndexByte(strCodeID, '=')+1:])
 	codeID, _ := strconv.Atoi(strCodeID)
 	//	logger.Info(fmt.Sprintf("dev codeID = %d keep alive", codeID))
-	if devinfo := business.getDevInfo(codeID); devinfo != nil {
-		devinfo.keepaliveTime = time.Now()
-		devinfo.status = true
+	if bIsClose {
+		return nil
 	}
+	business.devAliChan <- codeID
 
 	res := &coap.Message{
 		Type:      coap.Acknowledgement,

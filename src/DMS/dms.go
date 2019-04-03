@@ -33,8 +33,9 @@ func dms_start() {
 }
 
 func dms_close() {
-	b.Close()
 	h.Close()
+	b.Close()
+
 	//	w.Close()
 }
 

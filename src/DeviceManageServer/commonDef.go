@@ -28,11 +28,11 @@ func (c *StruCommonResp) setCommonResp(e errorCode) {
 	c.ErrMsg = errorMsg[e]
 }
 
-type struGetDevTempReq struct {
+type struGetPetHealthReq struct {
 	codeID int
 }
 
-type struGetDevTempResp struct {
+type struGetPetHealthResp struct {
 	StruCommonResp
 	CodeID      int `json:"CodeID"`
 	Temperature int `json:"Temperature"`

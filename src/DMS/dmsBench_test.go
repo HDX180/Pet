@@ -12,7 +12,7 @@ func BenchmarkHealth(b *testing.B) {
 	b.ResetTimer()
 
 	for i := 0; i < b.N; i++ {
-		codeID := 12370 + i
+		codeID := 13370 + i
 		uri := "http://127.0.0.1:4637/getDevTemp?codeID=" + strconv.Itoa(codeID)
 		resp, err := http.Get(uri)
 

@@ -1,7 +1,7 @@
 package DeviceManageServer
 
 import (
-	"fmt"
+	"go.uber.org/zap"
 	"sync"
 	"time"
 )
@@ -35,14 +35,12 @@ type struDevData struct {
 	temperature int
 }
 
-type mapDevInfo map[int]*struDevInfo //<codeID,*struDevInfo>
-
 type StruBusiness struct {
-	devInfoMaps    [WORKNUM]mapDevInfo
-	devMapLocks    [WORKNUM]sync.RWMutex
+	devInfoMaps    [WORKNUM]sync.Map    //<codeID,*struDevInfo>
 	devDataMap     map[int]*struDevData //<index, *struDevData>
 	devDataMapLock sync.RWMutex
-	currDevNum     int //指通过app绑定的数量
+	currDevNum     int      //指通过app绑定的数量
+	devAliChan     chan int //心跳队列
 }
 
 var business *StruBusiness = &StruBusiness{}
@@ -52,10 +50,8 @@ func GetBusinessInstance() *StruBusiness {
 }
 
 func (b *StruBusiness) Init() {
-	for i, _ := range b.devInfoMaps {
-		b.devInfoMaps[i] = make(map[int]*struDevInfo)
-	}
 	b.devDataMap = make(map[int]*struDevData)
+	b.devAliChan = make(chan int, 200)
 }
 
 func (b *StruBusiness) getDevDataMap(index int) (*struDevData, bool) {
@@ -71,27 +67,27 @@ func (b *StruBusiness) setDevDataMap(index int, v *struDevData) {
 	b.devDataMap[index] = v
 }
 
-func (b *StruBusiness) getDevInfoMap(codeID int) (*struDevInfo, bool) {
+func (b *StruBusiness) getDevInfoMap(codeID int) *struDevInfo {
 	var index int = codeID & (WORKNUM - 1)
-	b.devMapLocks[index].RLock()
-	defer b.devMapLocks[index].RUnlock()
-	val, ok := b.devInfoMaps[index][codeID]
-	return val, ok
+	val, ok := b.devInfoMaps[index].Load(codeID)
+	if ok {
+		return val.(*struDevInfo)
+	} else {
+		return nil
+	}
 }
 
 func (b *StruBusiness) setDevInfoMap(codeID int, d *struDevInfo) {
 	var index int = codeID & (WORKNUM - 1)
-	b.devMapLocks[index].Lock()
-	defer b.devMapLocks[index].Unlock()
-	b.devInfoMaps[index][codeID] = d
+	b.devInfoMaps[index].Store(codeID, d)
 }
 
 func (b *StruBusiness) getDevInfo(codeID int) *struDevInfo {
-	devinfo, ok := b.getDevInfoMap(codeID)
-	if !ok {
+	devinfo := b.getDevInfoMap(codeID)
+	if devinfo == nil {
 		//Start时未加载后续绑定的设备
 		if index := db_getDevIndex(codeID); index == 0 {
-			logger.Error(fmt.Sprintf("codeID : %d is not exsit", codeID))
+			logger.Error("dev is not exsit", zap.Int("codeID", codeID))
 			return nil
 		} else {
 			devinfo = &struDevInfo{
@@ -106,7 +102,20 @@ func (b *StruBusiness) getDevInfo(codeID int) *struDevInfo {
 	return devinfo
 }
 
-func (b *StruBusiness) getTemperature(r *struGetDevTempReq, w *struGetDevTempResp) {
+func (b *StruBusiness) handleDevMsg() {
+	for {
+		codeID, ok := <-b.devAliChan
+		if ok == false {
+			break
+		}
+		if devinfo := b.getDevInfo(codeID); devinfo != nil {
+			devinfo.keepaliveTime = time.Now()
+			devinfo.status = true
+		}
+	}
+}
+
+func (b *StruBusiness) getPetHealth(r *struGetPetHealthReq, w *struGetPetHealthResp) {
 
 	w.CodeID = r.codeID
 
@@ -125,12 +134,12 @@ func (b *StruBusiness) getTemperature(r *struGetDevTempReq, w *struGetDevTempRes
 			intoCache++
 		} else {
 			//无命中缓存或数据源无时效性,CoAP client->
-			logger.Info(fmt.Sprintf("codeID : %d data is out of date", r.codeID))
-			req := &coap_struGetTempReq{
+			logger.Info("data is out of date", zap.Int("codeID", r.codeID))
+			req := &coap_struGetPetHealthReq{
 				host: devinfo.host,
 			}
-			resp := new(coap_struGetTempResp)
-			if err := coapclient_getTemperature(req, resp); err != nil {
+			resp := new(coap_struGetPetHealthResp)
+			if err := coapclient_getPetHealth(req, resp); err != nil {
 				w.setCommonResp(DMS_ERR_DEV_COAPFAIL)
 				totalReqNum--
 				return
@@ -162,16 +171,20 @@ func (b *StruBusiness) UpdateDevData(i int) {
 		New: func() interface{} { return new(coap_struGetTempResp) },
 	}
 	for {
-		for _, devinfo := range b.devInfoMaps[i] {
+		b.devInfoMaps[i].Range(func(_, val interface{}) bool {
+			// for _, devinfo := range b.devInfoMaps[i] {
 			if bIsClose == true {
-				return
-			}
-			if time.Since(devinfo.keepaliveTime).Seconds() >= KEEPALVIETIME {
-				devinfo.status = false
-				continue //如果设备不在线，不更新设备数据
+				return false
 			}
 
-			if devData, ok := b.getDevDataMap(devinfo.index); ok || time.Since(devData.updateTime).Seconds() > UPDATETIME {
+			devinfo := val.(*struDevInfo)
+
+			if time.Since(devinfo.keepaliveTime).Seconds() >= KEEPALVIETIME {
+				devinfo.status = false
+				return true //如果设备不在线，不更新设备数据
+			}
+
+			if devData, ok := b.getDevDataMap(devinfo.index); !ok || time.Since(devData.updateTime).Seconds() > UPDATETIME {
 				req := devDataReqPool.Get().(*coap_struGetTempReq)
 				req.host = devinfo.host
 				resp := devDataRespPool.Get().(*coap_struGetTempResp)
@@ -179,7 +192,7 @@ func (b *StruBusiness) UpdateDevData(i int) {
 				if err := coapclient_getTemperature(req, resp); err != nil {
 					devDataRespPool.Put(resp)
 					devDataReqPool.Put(req)
-					continue
+					return true
 				}
 
 				if ok {
@@ -198,18 +211,23 @@ func (b *StruBusiness) UpdateDevData(i int) {
 				devDataRespPool.Put(resp)
 				devDataReqPool.Put(req)
 			}
+			return true
+		})
+		if bIsClose == true {
+			return
 		}
-		time.Sleep(time.Duration(1) * time.Second)
+		time.Sleep(time.Duration(500) * time.Millisecond)
 	}
 }
 
 func (b *StruBusiness) Start() {
 	b.currDevNum, _ = db_getDevInfo()
+	go b.handleDevMsg()
 	for i := 0; i < WORKNUM; i++ {
 		go b.UpdateDevData(i)
 	}
 }
 
 func (b *StruBusiness) Close() {
-	return
+	close(b.devAliChan)
 }

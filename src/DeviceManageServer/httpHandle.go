@@ -23,7 +23,7 @@ func GetHttpInstance() *StruHttpHandle {
 func (h *StruHttpHandle) Init() {
 	mux := http.NewServeMux()
 	h.mux = mux
-	mux.HandleFunc("/getDevTemp", getDevTempHandler)
+	mux.HandleFunc("/pet/health", getPetHealthHandler)
 	mux.HandleFunc("/time", getTimeHandler)
 	mux.HandleFunc("/cacheTest", cacheTestHandler)
 	mux.HandleFunc("/subscribe", subHandler)
@@ -53,18 +53,18 @@ func cacheTestHandler(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func getDevTempHandler(w http.ResponseWriter, r *http.Request) {
+func getPetHealthHandler(w http.ResponseWriter, r *http.Request) {
 	vars := r.URL.Query()
 	//accessToken := vars["accessToken"][0]
 	//checkAccessToken()
 	codeID, _ := strconv.Atoi(vars["codeID"][0])
 
-	getDevTempReq := &struGetDevTempReq{codeID: codeID}
-	getDevTempResp := new(struGetDevTempResp)
-	business.getTemperature(getDevTempReq, getDevTempResp)
+	getPetHealthReq := &struGetPetHealthReq{codeID: codeID}
+	getPetHealthResp := new(struGetPetHealthResp)
+	business.getPetHealth(getPetHealthReq, getPetHealthResp)
 
 	//stru->Json
-	if data, err := json.Marshal(*getDevTempResp); err == nil {
+	if data, err := json.Marshal(*getPetHealthResp); err == nil {
 		w.Write(data)
 	}
 }

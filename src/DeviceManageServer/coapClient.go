@@ -9,11 +9,11 @@ import (
 
 const MAX_MASSAGEID = 1 << 16 //2^16
 
-type coap_struGetTempReq struct {
+type coap_struGetPetHealthReq struct {
 	host string
 }
 
-type coap_struGetTempResp struct {
+type coap_struGetPetHealthResp struct {
 	CodeID      int `json:"CodeID"`
 	Temperature int `json:"Temperature"`
 }
@@ -22,7 +22,7 @@ func makeMessageID() uint16 {
 	return uint16(rand.Int31() % MAX_MASSAGEID)
 }
 
-func coapclient_getTemperature(m_req *coap_struGetTempReq, m_resp *coap_struGetTempResp) error {
+func coapclient_getPetHealth(m_req *coap_struGetTempReq, m_resp *coap_struGetTempResp) error {
 	req := coap.Message{
 		Type:      coap.Confirmable,
 		Code:      coap.GET,
